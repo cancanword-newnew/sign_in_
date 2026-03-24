@@ -155,13 +155,16 @@ class Api {
             try {
                 // 注意：这里原版是 HTTP 8081 端口，如果部署在 HTTPS 的 GitHub Pages，这里会被拦截 (Mixed Content)
                 // 若需要规避，可以通过修改后端 API 成 https 协议（如果是受支持的），否则必须借助用户端禁用安全检查。
-                const url = new URL(`http://iclass.buaa.edu.cn:8081/app/course/stu_scan_sign.action`);
-                url.searchParams.append("courseSchedId", cid);
-                url.searchParams.append("timestamp", Date.now());
-                url.searchParams.append("id", this.userId);
+                const targetUrl = new URL(`http://iclass.buaa.edu.cn:8081/app/course/stu_scan_sign.action`);
+                targetUrl.searchParams.append("courseSchedId", cid);
+                targetUrl.searchParams.append("timestamp", Date.now());
+                targetUrl.searchParams.append("id", this.userId);
                 if (this.sessionId) {
-                    url.searchParams.append("sessionId", this.sessionId);
+                    targetUrl.searchParams.append("sessionId", this.sessionId);
                 }
+                
+                // 使用跨域代理走 https 路线去请求北航的不安全 http，从而绕过 Mixed content 限制
+                const url = new URL(`https://corsproxy.io/?` + encodeURIComponent(targetUrl.toString()));
 
                 const res = await fetch(url.toString(), {
                     method: "POST",
