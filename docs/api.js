@@ -58,7 +58,7 @@ class Api {
             
             this.userId = data.result.id;
             this.sessionId = data.result.sessionId;
-            this.headers["sessionId"] = this.sessionId;
+            // 不再将 sessionId 设为 headers，而是之后附加到 URL 参数中避免触发跨域 OPTIONS 预检请求
             
             return { success: true, userId: this.userId };
         } catch (e) {
@@ -72,10 +72,14 @@ class Api {
             const url = new URL("https://iclass.buaa.edu.cn:8346/app/course/get_stu_course_sched.action");
             url.searchParams.append("dateStr", date_str);
             url.searchParams.append("id", this.userId);
+            // 将 sessionId 附加到 URL 中，而不是通过 header 传输
+            if (this.sessionId) {
+                url.searchParams.append("sessionId", this.sessionId);
+            }
 
             const res = await fetch(url.toString(), {
                 method: "GET",
-                headers: this.headers
+                // 删除 headers 的绑定，以便其成为 CORS 简单请求
             });
             if (res.ok) {
                 return await res.json();
@@ -155,10 +159,13 @@ class Api {
                 url.searchParams.append("courseSchedId", cid);
                 url.searchParams.append("timestamp", Date.now());
                 url.searchParams.append("id", this.userId);
+                if (this.sessionId) {
+                    url.searchParams.append("sessionId", this.sessionId);
+                }
 
                 const res = await fetch(url.toString(), {
                     method: "POST",
-                    headers: this.headers
+                    // 删除 headers 的绑定
                 });
 
                 if (res.ok) {
